@@ -9,211 +9,449 @@ import SwiftUI
 import MapKit
 
 
-struct PolygonCheckerApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
-}
-
 
 struct MapView: NSViewRepresentable {
-    @Binding var pointX: String
-    @Binding var pointY: String
-    @Binding var selectedCoordinate: CLLocationCoordinate2D?
+    var courts: [Court]
+    @Binding var selectedCourt: Court?
+
+
+    let polygonCoordinates: [[CLLocationCoordinate2D]] = [
+        [CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485),
+         CLLocationCoordinate2D(latitude: 55.984759145, longitude: 37.2248339653),
+         CLLocationCoordinate2D(latitude: 55.9953659683, longitude: 37.2312766314),
+         CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485)]
+    ]
     
-    
-    
-    
+
     func makeNSView(context: Context) -> MKMapView {
         let mapView = MKMapView(frame: .zero)
-        mapView.delegate = context.coordinator
+        mapView.delegate = context.coordinator // Установка делегата
         return mapView
     }
-    
-        
-    func updateNSView(_ nsView: MKMapView, context: Context) {
-        let coordinate = CLLocationCoordinate2D(latitude: 56.0080033408, longitude: 37.2108274698)
-        let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        let region = MKCoordinateRegion(center: coordinate, span: span)
-  //      nsView.setRegion(region, animated: true) // ЗАкоментировал, т.к. иначе карта после передвижения скачет обратно в эту точку
-        
-        nsView.delegate = context.coordinator
-    }
 
+    func updateNSView(_ mapView: MKMapView, context: Context) {
+        // Удаление всех предыдущих аннотаций и оверлеев
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.removeOverlays(mapView.overlays)
+
+        // Создание аннотации для центральной точки полигона
+        let centerCoordinate = calculateCenterCoordinate()
+        let centerAnnotation = MKPointAnnotation()
+        centerAnnotation.coordinate = centerCoordinate
+        mapView.addAnnotation(centerAnnotation)
+        
+        let polygonCoordinates = convertStringToCoordinates(selectedCourt?.polygons ?? "[[[55.9965389912,37.2119915485],[55.984759145,37.2248339653],[55.9953659683,37.2312766314],[55.9965389912,37.2119915485],[55.9965389912,37.2119915485]]]")
+        
+        print(polygonCoordinates)
+             let polygonOverlay = MKPolygon(coordinates: polygonCoordinates, count: polygonCoordinates.count)
+             mapView.addOverlay(polygonOverlay)
+        
+        // Установка региона, чтобы показать весь полигон на экране
+        let polygonBoundingRegion = polygonOverlay.boundingMapRect
+        let polygonRegion = MKCoordinateRegion(polygonBoundingRegion)
+        mapView.setRegion(polygonRegion, animated: true)
+        
+        
+
+    }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator()
     }
     
-
+    // Вычисление среднего значения координат
+    private func calculateCenterCoordinate() -> CLLocationCoordinate2D {
+        var centerCoordinate = CLLocationCoordinate2D(latitude: 0, longitude: 0)
+        
+        let pointCount = polygonCoordinates[0].count
+        for coordinate in polygonCoordinates[0] {
+            centerCoordinate.latitude += coordinate.latitude
+            centerCoordinate.longitude += coordinate.longitude
+        }
+        
+        centerCoordinate.latitude /= Double(pointCount)
+        centerCoordinate.longitude /= Double(pointCount)
+        
+        return centerCoordinate
+    }
+    
+    // Определение отображения оверлея полигона
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        if overlay is MKPolygon {
+            let renderer = MKPolygonRenderer(overlay: overlay)
+            renderer.fillColor = NSColor.red.withAlphaComponent(0.5)
+            renderer.strokeColor = NSColor.red
+            renderer.lineWidth = 2
+            return renderer
+        }
+        return MKOverlayRenderer(overlay: overlay)
+    }
     
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: MapView
-        
-        init(_ parent: MapView) {
-                  self.parent = parent
-              }
-
-        
-        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            // Handle map click events here
-        }
-        
-
-        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            let currentLocation = mapView.centerCoordinate
-            parent.selectedCoordinate = currentLocation
-            
-              //  Указатель на центр карты
-            // получаем центр карты
-            let centerCoordinate = mapView.centerCoordinate
-            
-            // удаляем все аннотации с карты
-            mapView.removeAnnotations(mapView.annotations)
-            
-            // создаем новую аннотацию с указателем
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = centerCoordinate
-            
-            // добавляем новую аннотацию на карту
-            mapView.addAnnotation(annotation)
-            
-            
-        }
-        
-        func mapView(_ mapView: MKMapView, didAdd views: [MKAnnotationView]) {
-            // Handle annotation view additions
-        }
-        
-        func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
-            mapView.setCenter(userLocation.coordinate, animated: true)
-        }
-        
-        func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-            // Handle deselection of annotation views
-        }
-        
-        func mapView(_ mapView: MKMapView, didFailToLocateUserWithError error: Error) {
-             // Handle location failure errors
-         }
-        
-        func mapView(_ mapView: MKMapView, didUpdate locations: [MKUserLocation]) {
-            // Handle location updates
-        }
-        
-        func mapView(_ mapView: MKMapView, didChange mode: MKUserTrackingMode, animated: Bool) {
-            // Handle user tracking mode changes
-        }
-        
-           
-        func mapView(_ mapView: MKMapView, didTapAt coordinate: CLLocationCoordinate2D) {
-             parent.pointX = String(coordinate.latitude)
-             parent.pointY = String(coordinate.longitude)
-            
-
-         }
-        
-
-    }
+           // Определение отображения оверлея полигона
+           func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+               if overlay is MKPolygon {
+                   let renderer = MKPolygonRenderer(overlay: overlay)
+                   renderer.fillColor = NSColor.red.withAlphaComponent(0.5)
+                   renderer.strokeColor = NSColor.red
+                   renderer.lineWidth = 2
+                   return renderer
+               }
+               return MKOverlayRenderer(overlay: overlay)
+           }
+       }
+    
 }
-
-
-
-
-
 
 
 struct ContentView: View {
+    @State private var AddressForSearchCourt: String = "г. Москва, пр. Мира, д. 19 56.355325, 41.300396"
+    
+    @State private var courts: [Court] = []
+    @State private var selectedCourt: Court? = nil
     @State private var coordinate = CLLocationCoordinate2D()
     @State private var selectedCoordinate: CLLocationCoordinate2D?
-    @State private var pointX = "56.0080033408"
-    @State private var pointY = "37.2108274698"
+    @State private var pointX = "55.9965389912"
+    @State private var pointY = "37.2119915485"
     @State private var userEnteredLongitude: Double = 0.0
     @State private var userEnteredLatitude: Double = 0.0
     
-    @State private var polygonPoints = "56.0083482384,37.2108972073 56.0080033408,37.2108274698 56.007985346,37.2111493349 56.0077664093,37.2114282846 56.0072175625,37.212023735 56.0067766799,37.2119539976 56.0064797561,37.2132468224 56.0063627855,37.21349895 56.0058049209,37.2137725353 56.0054869944,37.2137242556 56.0045601939,37.2127532959 56.0035133924,37.2114497423 56.0034054113,37.2112029791 56.0033754164,37.2110635042 56.003360419,37.2108221054 56.0033544201,37.2105699778 56.0033484211,37.2091162205 56.0033334237,37.2088479996 56.0032164435,37.2083330154 56.00293449,37.2075927258 56.0023225837,37.2083866596 56.0019266392,37.2087192535 56.0015126929,37.2089445591 56.0006007955,37.2045135498 56.0000758448,37.2010159492 56.0003638187,37.2008389235 56.0004208132,37.2010535002 56.0009097632,37.2008281946 56.0012547241,37.2010266781 56.0020556216,37.2006726265 56.0025175549,37.1999377012 56.002286589,37.1986985207 56.0031354571,37.1989613771 56.0031894481,37.1982264519 56.0030724675,37.1981191635 56.0035343887,37.1964401007 56.0041342781,37.1960002184 56.0044612138,37.1949326992 56.0043592342,37.1942782402 56.003810339,37.1928888559 56.0034773987,37.1916764975 56.0028175087,37.1912151575 56.0025355522,37.1903139353 56.0020496224,37.1892678738 56.0021306112,37.1881574392 56.0020076282,37.1878570318 56.002409571,37.1863120794 56.003435406,37.1869826317 56.0038253362,37.1864515543 56.0038583301,37.1852177382 56.0039753083,37.1845847368 56.0052410495,37.1845310926 56.0053760195,37.1841287613 56.0051900607,37.1819669008 56.0051960594,37.1793919802 56.0052980369,37.179107666 56.0066297179,37.1788179874 56.0079493565,37.1785336733 56.0083722312,37.1818381548 56.0105495125,37.1804863214 56.0111822806,37.1801054478 56.011335223,37.1802020073 56.0114341854,37.1804058552 56.0124387894,37.1854323149 56.0130655291,37.1884095669 56.0135093386,37.1904748678 56.0136682692,37.1907645464 56.0149246971,37.192003727 56.0164359549,37.1934735775 56.0185977902,37.1955764294 56.0169996629,37.1995675564 56.0154914257,37.203258276 56.014411701174645,37.20581173893491 56.01498665023998,37.20790922642529 56.015073204898066,37.20868170258586 56.01472468673209,37.209309339490694 56.01439078661718,37.2098082303829 56.01382842962304,37.210114002270274 56.01350853031288,37.209770679508516 56.0130535342,37.2085690498 56.0129695696,37.2076678276 56.0127296699,37.2067022324 56.0123578223,37.2058224678 56.012261861,37.2061228752 56.0117460653,37.2062730789 56.0113262264,37.2062301636 56.0111942761,37.2088909149 56.0108584006,37.2109991312 56.0099617186,37.2108274698 56.0100067031,37.2110527754 56.009766785,37.2115087509 56.0093049383,37.2117233276 56.0091459898,37.2112619877 56.0090380244,37.2113478184 56.0087441171,37.2112780809 56.0083482384,37.2108972073"
+    @State private var polygonPoints = "[[[55.9965389912,37.2119915485],[55.984759145,37.2248339653],[55.9953659683,37.2312766314],[55.9965389912,37.2119915485]]]"
+    
     @State private var result = ""
+    
+    let polygonCoordinates: [[CLLocationCoordinate2D]] = [
+        [CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485),
+         CLLocationCoordinate2D(latitude: 55.984759145, longitude: 37.2248339653),
+         CLLocationCoordinate2D(latitude: 55.9953659683, longitude: 37.2312766314),
+         CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485)]
+    ]
     
     var body: some View {
 
-
-        VStack {
-            MapView(pointX: $pointX, pointY: $pointY, selectedCoordinate: $selectedCoordinate)
-                        .edgesIgnoringSafeArea(.all)
+        TabView {
             
-            if let coordinate = selectedCoordinate {
-                Text("Координаты цента карты (при перемещении карты): \(coordinate.latitude), \(coordinate.longitude)")
-            }
-        
-        
-            Text("Введите координаты точки:")
-                .font(.headline)
-            
-            HStack {
-                TextField("X", text: $pointX)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                TextField("Y", text: $pointY)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            VStack (alignment: .leading){
                 
+                Text("1. Введите адрес (сводобная форма адреса):")
+                    .font(.headline)
                 
+            
+                    TextField("Адрес", text: $AddressForSearchCourt)
+                        .padding(.horizontal)
+                let result2 = parseAddressAndCoordinates(input: AddressForSearchCourt)
+            //    Text("Введён адрес: " + result.address! + ", введены координаты:" + result.coordinates!)
                 
+                Text("2. Найдите координаты этого адреса на яндекс.картах или гугл.картах:")
+                    .font(.headline)
+                HStack{
+                    Text("Нажмите на одну из ссылок и карта откроется по введенному адресу, скопируйте координаты:")
+                    if let url = URL(string: "https://maps.yandex.ru/?text=" + encodeCourtName(result2.address ?? "Москва")) {
+                            Link("maps.yandex.ru", destination: url)
+                            
+                        } else {
+                            //
+                        }
+                        if let url = URL(string: "https://google.com/maps/place/" + encodeCourtName(result2.address ?? "Москва")) {
+                            Link("maps.google.ru", destination: url)
+                            
+                        } else {
+                          //
+                        }
+                }
+                Text("3. Полученные координаты (или введите координаты точки):")
+                    .font(.headline)
                 
-                Button("Применить координаты", action: {
-                    //не работает пока применение координат
-
-                    if let latitude = Double(pointX),
-                       let longitude = Double(pointY) {
-                        selectedCoordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-                    } })
-            }
-            .padding()
-
-            
-            Text("Введите координаты вершин полигона через запятую:")
-                .font(.headline)
-            
-            TextField("1,2 3,4 5,6", text: $polygonPoints)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            Button(action: {
-                let point = CGPoint(x: Double(pointX) ?? 0, y: Double(pointY) ?? 0)
-                let polygonArray = polygonPoints
-                    .split(separator: " ")
-                    .map { pointString -> CGPoint in
-                        let components = pointString.split(separator: ",")
-                        let x = Double(components[0]) ?? 0
-                        let y = Double(components[1]) ?? 0
-                        return CGPoint(x: x, y: y)
+                HStack {
+                    TextField("X", text: $pointX)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    TextField("Y", text: $pointY)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                /*
+                Button(action: {
+                 //   let polygonCoordinates = convertStringToCoordinates(selectedCourt?.polygons ?? "[[[55.9965389912,37.2119915485],[55.984759145,37.2248339653],[55.9953659683,37.2312766314],[55.9965389912,37.2119915485],[55.9965389912,37.2119915485]]]")
+                    
+                    let polygonCoordinates = convertStringToCoordinates(selectedCourt?.polygons ?? "[[[55.9802514894,37.2259873152],[56.0028864977,37.2255206108],[55.9679052661,37.2529274225],[55.9793931146,37.2305041552],[55.9802514894,37.2259873152]]]")
+                    
+                    
+                    print(polygonCoordinates)
+                    
+                                let latitude = Double(pointX) ?? 0.0
+                                let longitude = Double(pointY) ?? 0.0
+                                let point = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                    
+               
+                        let isInsidePolygon = pointInsidePolygon(point, polygonCoordinates: [polygonCoordinates])
+                        // let isInsidePolygon = pointInsidePolygon2(point, polygonCoordinates: polygonCoordinates)
+                    
+                                result = isInsidePolygon ? "Point is inside the polygon" : "Point is outside the polygon"
+                    
+                            }) {
+                                Text("Check Point")
+                            }
+                            .padding()
+                            Text(result)
+                                .font(.headline)
+                                .padding()
+                
+                */
+              
+                Button(action: {
+                    if let courtName = findCourtForCoordinates(courts: courts, pointX: Double(pointX) ?? 0.0, pointY: Double(pointY) ?? 0.0) {
+                        result = "Court: \(courtName)"
+                    } else {
+                        result = "No court found for the coordinates"
                     }
-                
-                let isInside = pointInsidePolygon(point: point, polygon: polygonArray)
-                result = isInside ? "Точка внутри полигона" : "Точка вне полигона"
-            }) {
-                Text("Проверить")
+                    
+                }) {
+                    Text("Find Court")
+                }
+                .padding()
+
+                Text(result)
+                    .font(.headline)
+                    .padding()
+                MapView(courts: courts, selectedCourt: $selectedCourt)
             }
             .padding()
             
-            Text(result)
-                .font(.headline)
-        }
-        .padding()
-    }
+                .tabItem {
+                    Label("Поиск суда по адресу ответчика", systemImage: "star")
+                }
+            VStack {
+                MapView(courts: courts, selectedCourt: $selectedCourt)
+                VStack {
+                                Text("Выберите суд для показа на карте относящегося к нему полигона координат")
+                                    .font(.headline)
+                                
+                    List(courts, id: \.id) { court in
+                        HStack{
+                            
+                            VStack{
+                                Text(court.name)
+                                        .font(.headline)
+                                Text(court.address)
+                                Text(court.code)
+                                    // Text(court.website)
+                                
+                            }
+                        
+                        Text(court.polygons)
+                                .frame(maxHeight: 40)
+                        }
+                            .padding()
+                            .background(selectedCourt == court ? Color.blue : Color.clear)
+                            .onTapGesture {
+                                selectedCourt = court
+                            }
+                    }
+                            }
+                
+                if let coordinate = selectedCoordinate {
+                    Text("Координаты цента карты (при перемещении карты): \(coordinate.latitude), \(coordinate.longitude)")
+                }
     
-    func pointInsidePolygon(point: CGPoint, polygon: [CGPoint]) -> Bool {
-        var j = polygon.count - 1
-        var inside = false
-        for i in 0..<polygon.count {
-            print(polygon[i].y)
-            if polygon[i].y < point.y && polygon[j].y >= point.y || polygon[j].y < point.y && polygon[i].y >= point.y {
-                if polygon[i].x + (point.y - polygon[i].y) / (polygon[j].y - polygon[i].y) * (polygon[j].x - polygon[i].x) < point.x {
-                    inside = !inside
+                HStack {
+                    Text("Введите координаты точки:")
+                        .font(.headline)
+                    TextField("X", text: $pointX)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    TextField("Y", text: $pointY)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                }
+
+                
+    
+            }
+            .onAppear {
+                        // Загрузите данные из файла smallMoscow.json
+                        if let url = Bundle.main.url(forResource: "smallMoscow", withExtension: "json"),
+                           let data = try? Data(contentsOf: url) {
+                            do {
+                                // Распарсите JSON-данные и заполните массив courts
+                                courts = try JSONDecoder().decode([Court].self, from: data)
+                            } catch {
+                                print("Ошибка при чтении файла: \(error)")
+                            }
+                        }
+                    }
+                .tabItem {
+                    Label("Поиск по карте", systemImage: "star")
+                }
+            Text("t4t")
+                .tabItem {
+                    Label("Тест вхождения координат в полигон", systemImage: "star")
+                }
+            VStack{
+                List(courts, id: \.id) { court in
+                    VStack(alignment: .leading) {
+                        Text(court.name)
+                            .font(.headline)
+                        Text(court.address)
+                            .font(.subheadline)
+                        Text(court.polygons)
+                            .font(.subheadline)
+                            // Добавьте другие поля суда, если необходимо
+                    }
+                    .onTapGesture {
+                            selectedCourt = court
+                        }
+                }
+                
+                
+                .onAppear {
+                    // Загрузите данные из файла smallMoscow.json
+                    if let url = Bundle.main.url(forResource: "smallMoscow", withExtension: "json"),
+                       let data = try? Data(contentsOf: url) {
+                        do {
+                            // Распарсите JSON-данные и заполните массив courts
+                            courts = try JSONDecoder().decode([Court].self, from: data)
+                        } catch {
+                            print("Ошибка при чтении файла: \(error)")
+                        }
+                    }
                 }
             }
-            j = i
+                .tabItem {
+                    Label("База судов с полигонами", systemImage: "star")
+                }
         }
-        return inside
+        .padding()
+        
+       
+    
     }
+    
+    
+}
+
+// Функция для поиска вхождения координат в полигон, где вход point - координаты, polygon - полигон
+func convertPolygonFormat(polygonString: String) -> [CGPoint]? {
+    // Удаляем квадратные скобки и разделяем строку по запятым и закрывающей скобке
+    let points = polygonString
+        .replacingOccurrences(of: "[[", with: "")
+        .replacingOccurrences(of: "]]", with: "")
+        .components(separatedBy: "],[")
+
+    var polygonPoints: [CGPoint] = []
+
+    for pointString in points {
+        // Разделяем строку координат по запятой
+        let coordinates = pointString
+            .replacingOccurrences(of: "[", with: "")
+            .replacingOccurrences(of: "]", with: "")
+            .components(separatedBy: ",")
+
+        // Преобразуем строки координат в числа
+        if let x = Double(coordinates[0]), let y = Double(coordinates[1]) {
+            let point = CGPoint(x: x, y: y)
+            polygonPoints.append(point)
+        }
+    }
+
+    return polygonPoints.isEmpty ? nil : polygonPoints
+}
+
+func pointInsidePolygon(_ point: CLLocationCoordinate2D, polygonCoordinates: [[CLLocationCoordinate2D]]) -> Bool {
+    if polygonCoordinates.isEmpty {
+        return false
+    }
+    
+    let polygon = MKPolygon(coordinates: polygonCoordinates[0], count: polygonCoordinates[0].count)
+    let pointInPolygon = MKMapPoint(point)
+    let polygonRenderer = MKPolygonRenderer(polygon: polygon)
+    let mapPoint = pointInPolygon
+    let polygonViewPoint = polygonRenderer.point(for: mapPoint)
+    return polygonRenderer.path.contains(polygonViewPoint)
+    
+    
+}
+
+
+
+// преобразование строки polygonPoints в формате JSON в массив координат CLLocationCoordinate2D
+public func convertStringToCoordinates(_ polygonPoints: String) -> [CLLocationCoordinate2D] {
+      let jsonDecoder = JSONDecoder()
+      if let data = polygonPoints.data(using: .utf8),
+         let coordinatesArray = try? jsonDecoder.decode([[[Double]]].self, from: data) {
+          var coordinates: [CLLocationCoordinate2D] = []
+          for coordinateArray in coordinatesArray {
+              for coordinate in coordinateArray {
+                  if coordinate.count >= 2 {
+                      let latitude = coordinate[0]
+                      let longitude = coordinate[1]
+                      let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+                      coordinates.append(coordinate)
+                  }
+              }
+          }
+          print("000-000")
+          print(coordinates)
+          print("000-111")
+          return coordinates
+          
+      }
+      return []
+  }
+
+
+
+func findCourtForCoordinates(courts: [Court], pointX: Double, pointY: Double) -> String? {
+    let point = CLLocationCoordinate2D(latitude: pointX, longitude: pointY)
+    
+    for court in courts {
+        let polygonsString = court.polygons
+        if !polygonsString.isEmpty {
+            let polygonCoordinates = convertStringToCoordinates(polygonsString)
+            print("Court: \(court.name)")
+            print("Polygon Coordinates: \(polygonCoordinates)")
+            let isInsidePolygon = pointInsidePolygon(point, polygonCoordinates: [polygonCoordinates])
+            
+            if isInsidePolygon {
+                return court.name
+            }
+        }
+    }
+    
+    return nil
+}
+
+
+
+
+
+
+// функция для экранирования символов - нельзя просто русские буквы отправлять в интернет)))
+
+func encodeCourtName(_ WantCourtSearch: String) -> String {
+    // Создание набора символов, которые не нужно экранировать
+    let allowedCharacterSet = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~ ")
+    // Экранирование русских букв и символов, которые не входят в allowedCharacterSet
+    if let encodedString = WantCourtSearch.addingPercentEncoding(withAllowedCharacters: allowedCharacterSet.inverted) {
+        return encodedString
+    } else {
+        return WantCourtSearch
+    }
+}
+
+func parseAddressAndCoordinates(input: String) -> (address: String?, coordinates: String?) {
+    // Регулярное выражение для поиска координат
+    let coordinatesPattern = "\\s*(-?\\d+(\\.\\d+)?),\\s*(-?\\d+(\\.\\d+)?)" // 55.778036, 37.632143
+    let coordinatesRegex = try? NSRegularExpression(pattern: coordinatesPattern, options: [])
+
+    // Поиск координат во входной строке
+    var coordinates: String?
+    if let match = coordinatesRegex?.firstMatch(in: input, options: [], range: NSRange(location: 0, length: input.utf16.count)) {
+        coordinates = (input as NSString).substring(with: match.range)
+    }
+
+    // Удаление найденных координат из входной строки и использование оставшейся части в качестве адреса
+    var address: String? = input
+    if let coordinates = coordinates {
+        address = input.replacingOccurrences(of: coordinates, with: "").trimmingCharacters(in: .whitespaces)
+    }
+
+    return (address: address, coordinates: coordinates)
 }

@@ -7,14 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F127DCF52A1A18820043BD5A /* StructCourts.swift in Sources */ = {isa = PBXBuildFile; fileRef = F127DCF42A1A18820043BD5A /* StructCourts.swift */; };
 		F140F0AD29F44FBA0019034F /* test_polygonApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F140F0AC29F44FBA0019034F /* test_polygonApp.swift */; };
 		F140F0AF29F44FBA0019034F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F140F0AE29F44FBA0019034F /* ContentView.swift */; };
 		F140F0B129F44FBD0019034F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F140F0B029F44FBD0019034F /* Assets.xcassets */; };
 		F140F0B429F44FBD0019034F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F140F0B329F44FBD0019034F /* Preview Assets.xcassets */; };
 		F194D9F029FCFB9C00D19691 /* Location.gpx in Resources */ = {isa = PBXBuildFile; fileRef = F194D9EF29FCFB9C00D19691 /* Location.gpx */; };
+		F1FAB4762A21FD04001EF05C /* smallMoscow.json in Resources */ = {isa = PBXBuildFile; fileRef = F1FAB4752A21FD04001EF05C /* smallMoscow.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F127DCF42A1A18820043BD5A /* StructCourts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructCourts.swift; sourceTree = "<group>"; };
 		F140F0A929F44FBA0019034F /* test-polygon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "test-polygon.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F140F0AC29F44FBA0019034F /* test_polygonApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = test_polygonApp.swift; sourceTree = "<group>"; };
 		F140F0AE29F44FBA0019034F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -23,6 +26,7 @@
 		F140F0B529F44FBD0019034F /* test_polygon.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = test_polygon.entitlements; sourceTree = "<group>"; };
 		F194D9EF29FCFB9C00D19691 /* Location.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Location.gpx; sourceTree = "<group>"; };
 		F194D9F129FCFBB200D19691 /* GPX File example.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "GPX File example.gpx"; sourceTree = "<group>"; };
+		F1FAB4752A21FD04001EF05C /* smallMoscow.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = smallMoscow.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +63,8 @@
 			children = (
 				F140F0AC29F44FBA0019034F /* test_polygonApp.swift */,
 				F140F0AE29F44FBA0019034F /* ContentView.swift */,
+				F1FAB4752A21FD04001EF05C /* smallMoscow.json */,
+				F127DCF42A1A18820043BD5A /* StructCourts.swift */,
 				F140F0B029F44FBD0019034F /* Assets.xcassets */,
 				F140F0B529F44FBD0019034F /* test_polygon.entitlements */,
 				F140F0B229F44FBD0019034F /* Preview Content */,
@@ -133,6 +139,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F140F0B429F44FBD0019034F /* Preview Assets.xcassets in Resources */,
+				F1FAB4762A21FD04001EF05C /* smallMoscow.json in Resources */,
 				F194D9F029FCFB9C00D19691 /* Location.gpx in Resources */,
 				F140F0B129F44FBD0019034F /* Assets.xcassets in Resources */,
 			);
@@ -147,6 +154,7 @@
 			files = (
 				F140F0AF29F44FBA0019034F /* ContentView.swift in Sources */,
 				F140F0AD29F44FBA0019034F /* test_polygonApp.swift in Sources */,
+				F127DCF52A1A18820043BD5A /* StructCourts.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

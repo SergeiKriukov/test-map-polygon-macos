@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct test_polygonApp: App {
+  
     var body: some Scene {
         WindowGroup {
             ContentView()
+            
         }
     }
 }
