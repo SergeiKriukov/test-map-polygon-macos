@@ -11,9 +11,11 @@
 "[[[55.9965389912,37.2119915485],[55.984759145,37.2248339653],[55.9953659683,37.2312766314],[55.9965389912,37.2119915485]]]".
 
 В SwiftUI работа с этими данными ведется в формате CLLocationCoordinate2D:
+```
 [
         [CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485),
          CLLocationCoordinate2D(latitude: 55.984759145, longitude: 37.2248339653),
          CLLocationCoordinate2D(latitude: 55.9953659683, longitude: 37.2312766314),
          CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485)]
  ]
+ ```
