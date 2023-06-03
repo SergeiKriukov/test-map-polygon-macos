@@ -21,4 +21,6 @@
          CLLocationCoordinate2D(latitude: 55.9965389912, longitude: 37.2119915485)]
  ]
  ```
-<img src="[https://github.com/SergeiKriukov/gosposhlina-macos/blob/ca3f6ddc185bce52b8f43ae07267a190a974fcbb/assets/icon_64.png]
+<img src="https://github.com/SergeiKriukov/gosposhlina-macos/blob/ca3f6ddc185bce52b8f43ae07267a190a974fcbb/assets/icon_64.png">
+    <img src="https://github.com/SergeiKriukov/gosposhlina-macos/blob/ca3f6ddc185bce52b8f43ae07267a190a974fcbb/assets/icon_64.png">
+
