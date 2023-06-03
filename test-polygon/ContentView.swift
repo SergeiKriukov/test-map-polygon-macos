@@ -8,11 +8,11 @@
 import SwiftUI
 import MapKit
 
-
-
 struct MapView: NSViewRepresentable {
     var courts: [Court]
     @Binding var selectedCourt: Court?
+
+
 
 
     let polygonCoordinates: [[CLLocationCoordinate2D]] = [
@@ -26,6 +26,10 @@ struct MapView: NSViewRepresentable {
     func makeNSView(context: Context) -> MKMapView {
         let mapView = MKMapView(frame: .zero)
         mapView.delegate = context.coordinator // Установка делегата
+        // Добавление распознавателя жестов для клика мышкой
+                let clickGesture = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleMapClick(_:)))
+                mapView.addGestureRecognizer(clickGesture)
+        
         return mapView
     }
 
@@ -33,6 +37,7 @@ struct MapView: NSViewRepresentable {
         // Удаление всех предыдущих аннотаций и оверлеев
         mapView.removeAnnotations(mapView.annotations)
         mapView.removeOverlays(mapView.overlays)
+        
 
         // Создание аннотации для центральной точки полигона
         let centerCoordinate = calculateCenterCoordinate()
@@ -54,6 +59,35 @@ struct MapView: NSViewRepresentable {
         
 
     }
+    
+    /*  нарисовать сразу все полигоны
+     
+    func updateNSView(_ mapView: MKMapView, context: Context) {
+        // Удаление всех предыдущих аннотаций и оверлеев
+        mapView.removeAnnotations(mapView.annotations)
+        mapView.removeOverlays(mapView.overlays)
+
+        // Создание аннотации для центральной точки полигона
+        let centerCoordinate = calculateCenterCoordinate()
+        let centerAnnotation = MKPointAnnotation()
+        centerAnnotation.coordinate = centerCoordinate
+        mapView.addAnnotation(centerAnnotation)
+
+        // Рисование всех полигонов из всех судов на карте
+        drawPolygonsOnMap(mapView, courts: courts)
+        
+        // Установка региона, чтобы показать все полигоны на экране
+        let overlays = mapView.overlays
+           if !overlays.isEmpty {
+               var zoomRect = MKMapRect.null
+               for overlay in overlays {
+                   zoomRect = zoomRect.union(overlay.boundingMapRect)
+               }
+               let edgePadding = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+               mapView.setVisibleMapRect(zoomRect, edgePadding: edgePadding, animated: true)
+           }
+       }
+    */
     
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -99,6 +133,16 @@ struct MapView: NSViewRepresentable {
                }
                return MKOverlayRenderer(overlay: overlay)
            }
+        @objc func handleMapClick(_ gestureRecognizer: NSClickGestureRecognizer) {
+                   let mapView = gestureRecognizer.view as! MKMapView
+                   let clickPoint = gestureRecognizer.location(in: mapView)
+                   let clickCoordinate = mapView.convert(clickPoint, toCoordinateFrom: mapView)
+                   
+                   // Делегирование координат клика во внешний обработчик
+                   // (например, метод в родительском представлении)
+                   // Можете использовать @Binding или @State переменную для передачи координат в ContentView
+                   print("Clicked coordinate:", clickCoordinate)
+               }
        }
     
 }
@@ -106,7 +150,10 @@ struct MapView: NSViewRepresentable {
 
 struct ContentView: View {
     @State private var AddressForSearchCourt: String = "г. Москва, пр. Мира, д. 19 56.355325, 41.300396"
-    
+    @State private var drawAllPolygons = false // рисовать все полигоны
+    @State private var clickCoordinate: CLLocationCoordinate2D?
+
+
     @State private var courts: [Court] = []
     @State private var selectedCourt: Court? = nil
     @State private var coordinate = CLLocationCoordinate2D()
@@ -128,7 +175,7 @@ struct ContentView: View {
     ]
     
     var body: some View {
-
+       
         TabView {
             
             VStack (alignment: .leading){
@@ -201,14 +248,14 @@ struct ContentView: View {
                     if let courtName = findCourtForCoordinates(courts: courts, pointX: Double(pointX) ?? 0.0, pointY: Double(pointY) ?? 0.0) {
                         result = "Court: \(courtName)"
                     } else {
-                        result = "No court found for the coordinates"
+                        result = "Не найден суд (у суда не прописаны полигоны или не загружена база судов)"
                     }
                     
                 }) {
-                    Text("Find Court")
+                    Text("Найти суд по этим координатам")
                 }
                 .padding()
-
+                      
                 Text(result)
                     .font(.headline)
                     .padding()
@@ -252,15 +299,7 @@ struct ContentView: View {
                     Text("Координаты цента карты (при перемещении карты): \(coordinate.latitude), \(coordinate.longitude)")
                 }
     
-                HStack {
-                    Text("Введите координаты точки:")
-                        .font(.headline)
-                    TextField("X", text: $pointX)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    TextField("Y", text: $pointY)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                }
+              
 
                 
     
@@ -278,9 +317,25 @@ struct ContentView: View {
                         }
                     }
                 .tabItem {
-                    Label("Поиск по карте", systemImage: "star")
+                    Label("Полигоны на карте", systemImage: "star")
                 }
-            Text("t4t")
+            
+            VStack{
+                Text("Введите координаты полигона:")
+                Text("Введите координаты точки:")
+                HStack {
+                    Text("Введите координаты точки:")
+                        .font(.headline)
+                    TextField("X", text: $pointX)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    TextField("Y", text: $pointY)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                }
+                Button("Проверить вхождение точки в полигон"){
+                    //
+                }
+            }
                 .tabItem {
                     Label("Тест вхождения координат в полигон", systemImage: "star")
                 }
@@ -397,7 +452,7 @@ public func convertStringToCoordinates(_ polygonPoints: String) -> [CLLocationCo
   }
 
 
-
+// Перебрать суды и найти в полигон какого суда входит точка
 func findCourtForCoordinates(courts: [Court], pointX: Double, pointY: Double) -> String? {
     let point = CLLocationCoordinate2D(latitude: pointX, longitude: pointY)
     
@@ -418,6 +473,17 @@ func findCourtForCoordinates(courts: [Court], pointX: Double, pointY: Double) ->
     return nil
 }
 
+// Нарисовать все полигоны из базы судов
+func drawPolygonsOnMap(_ mapView: MKMapView, courts: [Court]) {
+    for court in courts {
+        let polygonsString = court.polygons
+        if !polygonsString.isEmpty {
+            let polygonCoordinates = convertStringToCoordinates(polygonsString)
+            let polygonOverlay = MKPolygon(coordinates: polygonCoordinates, count: polygonCoordinates.count)
+            mapView.addOverlay(polygonOverlay)
+        }
+    }
+}
 
 
 
